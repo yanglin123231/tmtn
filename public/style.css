@@ -160,6 +160,7 @@ input { font: inherit; color: inherit; background: none; border: 0; outline: non
 .th-sub .mono { font-size: 11px; }
 .copy { cursor: pointer; opacity: .7; } .copy:hover { opacity: 1; }
 .links { display: flex; gap: 6px; flex-wrap: wrap; min-width: 0; }
+.links-row { margin-top: 8px; align-items: center; }
 .links a { color: var(--text); text-decoration: none; padding: 5px 11px; border-radius: 7px; border: 1px solid var(--line2); font-size: 12px; }
 .links a:hover { border-color: var(--muted); }
 .th-price { text-align: right; }
