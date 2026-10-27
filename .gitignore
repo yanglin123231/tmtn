@@ -1,0 +1,31 @@
+node_modules/
+
+# 本地数据：设置、持仓、交易记录、收藏、屏蔽、单币规则、授权记录、缓存、测试钱包（含私钥）
+data/
+
+# 日志与环境变量
+*.log
+.env
+.env.*
+!.env.example
+
+# 开发过程中的备份文件
+*.bak
+*.bak[0-9]*
+README.old.md
+
+# 本机 AI 助手 / 技能目录（第三方内容，按需单独处理）
+.claude/
+.agents/
+skills-lock.json
+
+.DS_Store
+
+# 开源前清理清单（里面列了私人地址，只自己看）
+OPEN_SOURCE_CHECKLIST.md
+
+# 多钱包：其他钱包后端的数据目录
+data-*/
+
+# 额外钱包的容器配置：登录信息（baw/）、数据、访问令牌都在这里，不要提交
+wallets/

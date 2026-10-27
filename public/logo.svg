@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <rect width="256" height="256" rx="56" fill="#0b0d10"/>
+  <polyline points="40,176 92,124 128,152 196,76" fill="none" stroke="#f0b90b" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M160 72 H204 V116" fill="none" stroke="#f0b90b" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="128" y="226" text-anchor="middle" font-family="Arial Black,Helvetica,Arial,sans-serif" font-weight="900" font-size="44" fill="#ffffff" letter-spacing="4">TMTN</text>
+</svg>

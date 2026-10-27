@@ -1,0 +1,14 @@
+# 不进镜像：依赖（镜像里重新装）、本地数据、密钥、各钱包的登录目录
+node_modules
+data
+data-*
+wallets
+.env
+.env.*
+*.log
+*.bak
+*.bak[0-9]*
+.git
+.claude
+.agents
+docs
