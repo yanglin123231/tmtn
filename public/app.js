@@ -776,11 +776,13 @@ function renderBottom() {
       break;
     }
     case 'pos': {
-      // 详情页的「我的持仓」只看当前这个币（和持仓页同一份数据：均价、市值、盈亏都折成 BNB / 美元）
+      // 全部持仓：以链上余额为准（和持仓页同一份数据），选中的币在最上面多显示一块详情
       const sel = S.selected?.toLowerCase(), hr = HOLD.data?.rows?.find((x) => x.token.toLowerCase() === sel);
-      if (sel && t) {
-        cnt = hr?.amount > 0 ? '持有中' : '';
-        html = !hr ? `<div class="empty">没有持有 ${esc(t.symbol)}${LIVE() ? '' : '（模拟盘）'}</div>` : `<div class="mypos">
+      const held = (HOLD.data?.rows || []).filter((r) => (r.amount || 0) > 0);
+      cnt = held.length + ' 个持仓';
+      let detail = '';
+      if (sel && t && hr && hr.amount > 0) {
+        detail = `<div class="mypos">
           <div><span>持有</span><b>${K(hr.amount)}</b><small>${hr.supplyPct != null ? hr.supplyPct.toFixed(3) + '% 总量' : ''}</small></div>
           <div title="${hr.avgBuyBnb ? sub(hr.avgBuyBnb) + ' BNB' : ''}${hr.avgBuyQuote && hr.quote !== 'BNB' ? ' / ' + sub(hr.avgBuyQuote) + ' ' + esc(hr.quote) : ''}"><span>买入均价</span><b>${hr.avgBuyUsd ? '$' + sub(hr.avgBuyUsd) : '—'}</b><small>${hr.avgBuyBnb ? sub(hr.avgBuyBnb) + ' BNB' : ''}</small></div>
           <div><span>现价</span><b>${t.priceUsd ? '$' + sub(t.priceUsd) : '—'}</b><small>${hr.priceBnb ? sub(hr.priceBnb) + ' BNB' : ''}</small></div>
@@ -788,17 +790,16 @@ function renderBottom() {
           <div title="${usdTip(hr)}"><span>成本</span><b>$${(hr.costUsd || 0).toFixed(2)}</b><small>${bnb(hr.costBnb)} BNB</small></div>
           <div title="${usdTip(hr)}"><span>已卖出</span><b>$${(hr.soldUsd || 0).toFixed(2)}</b><small>${bnb(hr.soldBnb)} BNB</small></div>
           <div title="${usdTip(hr)}"><span>盈亏</span><b class="${(hr.pnlUsd ?? hr.pnlBnb ?? 0) >= 0 ? 'g' : 'r'}">${usdSigned(hr.pnlUsd)}</b><small>${hr.pnlPct != null ? (hr.pnlPct >= 0 ? '+' : '') + hr.pnlPct.toFixed(1) + '%' : ''}</small></div>
-          ${hr.amount > 0 ? `<div class="acts"><button class="qb" data-hsell="${hr.walletId}:${hr.token}:50">卖 50%</button> <button class="qb" style="color:var(--r)" data-hsell="${hr.walletId}:${hr.token}:100">清仓</button></div>` : ''}
-        </div>${hr.trades?.length ? `<table class="ttable"><tr><th>时间</th><th class="l">方向</th><th>数量</th><th>金额 (BNB)</th><th class="l">交易</th></tr>${hr.trades.map((x) => `<tr><td class="dim">${new Date(x.ts).toLocaleString('zh-CN', { hour12: false })}</td><td class="l ${x.side === 'buy' ? 'g' : 'r'}">${x.side === 'buy' ? '买入' : '卖出'}</td><td>${K(x.tokens)}</td><td>${bnb(x.bnb, 5)}</td><td class="l">${txLink(x.tx)}</td></tr>`).join('')}</table>` : ''}`;
-        holdRow(t); break;
+        </div>`;
       }
-      const rows = S.positions; cnt = rows.filter((p) => p.amount > 0).length + ' 个持仓';
       // 已迁移、还没领取的 Flap 曲线份额
       const cl = LIVE() && S.claimable?.length ? `<div class="note" style="margin:6px 0"><b class="y">可领取</b>（Flap 曲线已迁移，份额要领成代币）：${S.claimable.map((c) => `<span class="side" style="margin-right:12px">${logoHtml({ ...c, address: c.token, platform: 'flap' }, 'xs')}${esc(c.symbol)} ${K(c.shares)} 份 <button class="qb" style="display:inline" data-claim="${c.market}">领取</button></span>`).join('')}</div>` : '';
-      html = cl + (rows.length ? `<table><tr><th>代币</th><th class="l">钱包</th><th>持有</th><th>价值 (BNB)</th><th>成本</th><th>累计买入/卖回</th><th>盈亏</th><th>浮盈%</th><th class="l">状态</th><th>操作</th></tr>
-        ${rows.map((p) => `<tr><td><span class="side">${logoHtml({ ...p, address: p.token }, 'xs')}<a href="#" data-a="${p.token}">${esc(p.symbol)}</a></span></td><td class="l">${p.wallet}</td><td>${K(p.amount)}</td><td>${bnb(p.valueBnb)}</td><td>${bnb(p.costBnb)}</td><td>${bnb(p.boughtBnb)} / ${bnb(p.soldBnb)}</td>
-        <td class="${p.pnlBnb >= 0 ? 'g' : 'r'}">${p.pnlBnb >= 0 ? '+' : ''}${bnb(p.pnlBnb)}</td><td class="${p.pnlPct >= 0 ? 'g' : 'r'}">${p.amount > 0 ? pctS(p.pnlPct) : '已清仓'}</td><td class="l">${p.stage === 'curve' ? '内盘' : p.stage === 'dex' ? '已迁移' : '已撤池'}</td>
-        <td>${p.amount > 0 ? `<button class="qb" style="display:inline;color:var(--r);border-color:rgba(246,70,93,.4);background:var(--r-bg)" data-sell="${p.walletId}:${p.token}:50">卖50%</button> <button class="qb" style="display:inline;color:var(--r);border-color:rgba(246,70,93,.4);background:var(--r-bg)" data-sell="${p.walletId}:${p.token}:100">清仓</button>` : ''}</td></tr>`).join('')}</table>` : (cl ? '' : '<div class="empty">暂无持仓</div>'));
+      const list = held.length ? `<table class="ttable"><tr><th class="l">代币</th><th>数量</th><th>市值 (BNB)</th><th>成本 (BNB)</th><th>盈亏 (BNB)</th><th class="l">操作</th></tr>
+        ${held.map((r) => `<tr class="hrow" data-hold="${r.token}" style="cursor:pointer" title="点击打开 ${esc(r.symbol)}"><td class="l"><span class="side">${logoHtml({ ...r, address: r.token }, 'xs')}<a href="#" data-a="${r.token}"><b>${esc(r.symbol)}</b></a> <i class="pbadge" style="margin-left:4px">${r.platform === 'four' ? 'Four' : r.platform === 'gang' ? 'Gang' : 'Flap'}</i><small class="hsub">${esc(r.name || '')}</small></span></td>
+          <td>${K(r.amount)}</td><td>${r.valueBnb != null ? bnb(r.valueBnb, 5) : '—'}</td><td>${bnb(r.costBnb)}</td>
+          <td class="${(r.pnlBnb || 0) >= 0 ? 'g' : 'r'}">${r.pnlBnb != null ? (r.pnlBnb >= 0 ? '+' : '') + bnb(r.pnlBnb, 5) : '—'}${r.pnlPct != null ? ` <small>${(r.pnlPct >= 0 ? '+' : '') + r.pnlPct.toFixed(0)}%</small>` : ''}</td>
+          <td class="l acts"><button class="qb" data-hsell="${r.walletId}:${r.token}:50">卖50%</button> <button class="qb" style="color:var(--r)" data-hsell="${r.walletId}:${r.token}:100">清仓</button></td></tr>`).join('')}</table>` : `<div class="empty">暂无持仓${LIVE() ? '' : '（模拟盘）'}</div>`;
+      html = detail + cl + list;
       break;
     }
     case 'orders': case 'fills': {
@@ -2038,6 +2039,15 @@ document.addEventListener('click', (e) => {
   if (chip) { const p = chip.dataset.hp; if (HOLD.plats.has(p)) { if (HOLD.plats.size > 1) HOLD.plats.delete(p); } else HOLD.plats.add(p); try { localStorage.setItem('holdPlats', JSON.stringify([...HOLD.plats])); } catch { /* ignore */ } return renderHold(); }
   if (e.target.closest('[data-hshow]')) { e.preventDefault(); $('#holdDust').checked = false; return renderHold(); }
   const q2b = e.target.closest('[data-q2b]'); if (q2b) { e.stopPropagation(); q2b.disabled = true; quoteToBnb(q2b.dataset.q2b).finally(() => { q2b.disabled = false; }); return; }
+  // 底部「我的持仓」表格：点行 → 打开这个代币的详情页
+  const hrow = e.target.closest('tr.hrow[data-hold]');
+  if (hrow && hrow.closest('#bottomBody') && !e.target.closest('[data-hsell]')) {
+    e.preventDefault();
+    const a = hrow.dataset.hold;
+    const tk = [...S.tokens.values()].find((x) => x.address.toLowerCase() === a.toLowerCase());
+    if (tk) openToken(tk); else { setView('trade'); select(a); }
+    return;
+  }
   const sell = e.target.closest('[data-hsell]');
   if (sell) { e.stopPropagation(); const [w, tk, pct] = sell.dataset.hsell.split(':'); return submitOrder({ token: tk, side: 'sell', wallets: [w], amountFor: () => +pct }); }
   if (e.target.closest('[data-claim],.logo')) return;

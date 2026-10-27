@@ -113,7 +113,7 @@ export class Holdings {
   // 用 multicall3 一次读完全部候选币的 balanceOf（几百个币一个 RPC 调用），结果缓存 60 秒。
   async chainExtra() {
     const w = this.trader.wallets[0]; if (!w?.address) return [];
-    if (this.extraCache && Date.now() - this.extraCache.at < 60_000) return this.extraCache.v;
+    if (this.extraCache && Date.now() - this.extraCache.at < 10_000) return this.extraCache.v;
     // 已记录但数量为 0 的持仓也要读（可能在别处买了，程序没记数量）
     const cands = [...this.market.tokens.values()].filter((t) => t?.address && ['gang', 'four', 'flap'].includes(t.platform));
     if (!cands.length) { this.extraCache = { v: new Map(), at: Date.now() }; return new Map(); }
@@ -133,7 +133,7 @@ export class Holdings {
         if (!r.success) return;
         const bal = iface.decodeFunctionResult('balanceOf', r.returnData)[0];
         const num = Number(ethers.formatUnits(bal, 18));
-        if (num > 0) out.set(lc(cands[i].address), num);
+        out.set(lc(cands[i].address), num);   // 0 也记录：链上是准的，用来覆盖过时的程序记录
       } catch { /* ignore */ }
     });
     this.extraCache = { v: out, at: Date.now() };
@@ -151,8 +151,11 @@ export class Holdings {
     try { chainBal = await this.chainExtra(); } catch { /* 读链失败就不补 */ }
     const posMap = new Map(tradePos.map((p) => [lc(p.token), p]));
     for (const [k, bal] of chainBal) if (!posMap.has(k)) posMap.set(k, { token: k, walletId: w.id, amount: 0, boughtBnb: 0, soldBnb: 0, costBnb: 0, peak: 0, openedAt: null });
-    // 数量以链上余额为准（程序记录的数量可能过时 / 为 0）
-    const allPos = [...posMap.values()].map((p) => ({ ...p, amount: Math.max(p.amount || 0, chainBal.get(lc(p.token)) || 0) }));
+    // 数量以链上余额为准：扫到的币（含余额 0）一律用链上数字，避免卖光后还显示旧数量；没扫到的才用程序记录
+    const allPos = [...posMap.values()].map((p) => {
+      const k = lc(p.token), chain = chainBal.has(k) ? chainBal.get(k) : null;
+      return { ...p, amount: chain != null ? chain : (p.amount || 0) };
+    });
     for (const p of allPos) {
       const t = this.market.get(p.token); if (!t) continue;
       const h = this.hist.get(lc(p.token));
